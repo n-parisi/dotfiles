@@ -43,16 +43,21 @@ alias gco='git checkout'
 eval "$(~/.local/bin/mise activate zsh)"
 source ~/.local/share/mise/completions.zsh
 
-# One verb to update everything: pull+apply dotfiles (also refreshes prezto/tpm
-# externals), then upgrade every mise-managed tool to the newest release.
-# `update -n` previews what mise would bump without changing anything.
+# One verb to update everything: pull+apply dotfiles, then upgrade every
+# mise-managed tool to the newest release. `update -n` previews what mise would
+# bump without changing anything.
+#   -R/--refresh-externals=always FORCES a git pull of every external (prezto,
+#   tpm, and the work overlay) on each `update`. Without it chezmoi honors each
+#   external's refreshPeriod (weekly), so a work-overlay edit pushed from another
+#   machine could take up to a week to arrive. `update` is the deliberate sync
+#   command, so we always refresh; plain `chezmoi apply` still stays fast.
 update() {
     if [[ "$1" == "-n" || "$1" == "--dry-run" ]]; then
         echo "== chezmoi (would apply) =="; chezmoi update --dry-run --verbose
         echo "== mise outdated =="; mise outdated
         return
     fi
-    echo "== chezmoi update =="; chezmoi update || return
+    echo "== chezmoi update =="; chezmoi update -R || return
     echo "== mise upgrade =="; mise upgrade
 }
 
