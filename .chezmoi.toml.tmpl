@@ -1,5 +1,5 @@
 {{- $email  := promptStringOnce . "email"  "Git email" -}}
-{{- $region := promptStringOnce . "region" "Region kanto or johto" "kanto" -}}
+{{- $region := promptStringOnce . "region" "Region kanto, johto, or hoenn" "kanto" -}}
 {{- $work   := promptBoolOnce   . "work"   "Work machine" false -}}
 [data]
   email  = {{ $email | quote }}
