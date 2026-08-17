@@ -20,6 +20,17 @@
 [diff]
 	colorMoved = default
 
+# Use the GitHub CLI (gh) as the credential helper for GitHub over HTTPS, so
+# `git push` to the base dotfiles repo just works once `gh auth login` is done.
+# The empty `helper =` line first resets any inherited helpers. `gh` is on PATH
+# via mise (it's in the base mise config), so this survives gh version upgrades.
+[credential "https://github.com"]
+	helper =
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !gh auth git-credential
+
 # Work-specific git settings, present only on work machines (the overlay repo is
 # cloned there by the gated .chezmoiexternal entry). Git silently ignores a
 # missing include path, so this is a no-op on personal machines.
