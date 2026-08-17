@@ -1,2 +1,5 @@
 # chezmoi patterns to ignore in the source state. (The Brazil `Config` file that
 # used to be ignored here now lives only in the private work overlay repo.)
+
+# Repo docs — not a dotfile to apply into $HOME.
+README.md
