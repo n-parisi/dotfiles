@@ -12,6 +12,7 @@ zoxide = "latest"
 starship = "latest"
 glow = "latest"
 gh = "latest"      # GitHub CLI — auth + push for the base repo (this dotfiles repo)
+bun = "latest"     # JS runtime + package manager; mise's core:bun backend picks the right per-OS/arch build
 {{ if eq .chezmoi.osRelease.versionID "2" -}}
 # fastfetch: the default release binary needs glibc >= 2.33. AL2 (glibc 2.26)
 # needs the upstream "-polyfilled" variant, selected here via the ubi backend.

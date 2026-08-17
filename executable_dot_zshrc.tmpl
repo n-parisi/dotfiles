@@ -87,6 +87,8 @@ function git_main_branch() {
   return 1
 }
 
+eval "$(omp completions zsh)"
+
 # Prezto
 autoload -Uz compinit && compinit
 source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
