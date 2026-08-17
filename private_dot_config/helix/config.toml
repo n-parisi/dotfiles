@@ -1,0 +1,19 @@
+theme = "kanagawa"
+[editor]
+line-number = "relative"
+cursorline = true
+auto-save = true
+bufferline = "multiple"
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+
+[editor.file-picker]
+hidden = false
+
+[editor.indent-guides]
+render = true
+
+[editor.soft-wrap]
+enable = true

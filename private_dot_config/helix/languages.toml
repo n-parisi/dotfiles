@@ -1,0 +1,5 @@
+[language-server.jdtls]
+command = "jdtls"
+
+[language-server.jdtls.config.java.inlayHints]
+parameterNames.enabled = "all"

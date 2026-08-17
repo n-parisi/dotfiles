@@ -1,0 +1,36 @@
+#!/bin/bash
+# mise config hash: {{ include "private_dot_config/mise/config.toml.tmpl" | sha256sum }}
+set -euo pipefail
+
+if command -v mise &>/dev/null; then
+    echo "Installing mise tools..."
+    mise install --yes
+fi
+
+# helix on AL2 only: mise's prebuilt (and every upstream release binary) needs
+# glibc >= 2.29, but AL2 ships 2.26 — so build from source here. Everywhere else
+# helix is mise-managed (see mise/config.toml.tmpl) and this block is skipped.
+if grep -q "VERSION_ID=\"2\"" /etc/os-release 2>/dev/null && ! command -v hx &>/dev/null; then
+    if mise exec rust -- cargo --version &>/dev/null; then
+        echo "Building helix from source..."
+        git clone --depth 1 https://github.com/helix-editor/helix /tmp/helix-build
+        cd /tmp/helix-build
+        mise exec rust -- cargo install --path helix-term --locked
+        mkdir -p ~/.config/helix
+        cp -r runtime ~/.config/helix/
+        ln -sf ~/.cargo/bin/hx ~/.local/bin/hx
+        rm -rf /tmp/helix-build
+    fi
+fi
+
+# pokeget (Pokémon sprites for the pokefetch startup logo). Built from source on
+# every machine: its prebuilt release binary needs glibc >= 2.34 (dead on AL2),
+# and it isn't published to crates.io, so we install from the git repo. --locked
+# is REQUIRED — an unpinned build pulls a zune-jpeg version that fails to compile.
+if ! command -v pokeget &>/dev/null; then
+    if mise exec rust -- cargo --version &>/dev/null; then
+        echo "Building pokeget from source..."
+        mise exec rust -- cargo install --git https://github.com/talwat/pokeget-rs --locked
+        ln -sf ~/.cargo/bin/pokeget ~/.local/bin/pokeget
+    fi
+fi

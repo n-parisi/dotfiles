@@ -1,0 +1,31 @@
+# Git-repo dependencies that used to be `git clone`d in run_once.
+# chezmoi keeps these cloned + refreshed (refreshPeriod) as part of `chezmoi apply`,
+# so `chezmoi update` also updates them — no run_once re-run needed.
+#
+# This file is always rendered as a template, so the work overlay below is only
+# emitted on machines whose chezmoi config sets `work = true` (see
+# .chezmoi.toml.tmpl). Personal machines never fetch the private overlay.
+
+[".zprezto"]
+    type = "git-repo"
+    url = "https://github.com/sorin-ionescu/prezto.git"
+    refreshPeriod = "168h"  # pull at most weekly on apply
+    [".zprezto".clone]
+        args = ["--recursive"]
+    [".zprezto".pull]
+        args = ["--recurse-submodules"]
+
+[".tmux/plugins/tpm"]
+    type = "git-repo"
+    url = "https://github.com/tmux-plugins/tpm.git"
+    refreshPeriod = "168h"
+
+{{ if (.work | default false) -}}
+# Private work overlay (work-specific config). Cloned into
+# ~/.local/share/dotfiles-work and sourced/included by ~/.zshrc and ~/.gitconfig.
+# URL comes from local chezmoi data so no internal URL lives in the public repo.
+[".local/share/dotfiles-work"]
+    type = "git-repo"
+    url = {{ .workRepoUrl | quote }}
+    refreshPeriod = "168h"
+{{- end }}

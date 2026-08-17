@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+url=$(tmux capture-pane -p | grep -oE 'https?://[^ >"]+' | sort -u | ~/.local/share/mise/shims/fzf --tmux)
+[ -z "$url" ] && exit 0
+encoded=$(printf '%s' "$url" | base64 -w0)
+printf '\ePtmux;\e\033]52;c;%s\033\\\e\\' "$encoded" > "$(tmux display -p '#{pane_tty}')"
+tmux display "Copied: $url"

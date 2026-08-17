@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# pokefetch — show a random Pokémon sprite as the fastfetch logo.
+# Wrapper around `pokeget` (sprites) + `fastfetch` (system info), adapted from
+# github.com/Discomanfulanito/pokefetch. Called from ~/.zshrc at startup.
+#
+# Degrades gracefully: if pokeget isn't installed yet (fresh machine, before
+# run_onchange builds it) it falls back to plain fastfetch, so shell startup
+# never errors out.
+
+# Pokémon to pick from at random. Anything after the name is passed straight to
+# pokeget (e.g. -s for shiny, --mega-y for forms — see `pokeget --help`).
+# Leave this empty to let pokeget pick any random Pokémon (its built-in
+# "random"); a region name (e.g. "kanto") narrows the random pick to that region.
+POKEMON_LIST=(
+"{{ .region }}"
+)
+
+# Layout tuning
+EXTRA_PADDING_H=2   # extra vertical padding above the sprite
+EXTRA_PADDING_W=0   # extra horizontal padding
+WIDTH=38            # sprite display column budget
+
+# Missing either tool (fresh machine / build pending) → plain fastfetch, no error.
+if ! command -v pokeget &>/dev/null; then
+  command -v fastfetch &>/dev/null && exec fastfetch
+  exit 0
+fi
+
+# Info-panel height, so we can vertically center the sprite against it.
+fetcher_height=$(fastfetch --logo none | wc -l)
+
+# Empty list → let pokeget choose (its built-in "random"). Otherwise pick a
+# random entry; word-split so "mimikyu -s" becomes name + flag.
+if (( ${#POKEMON_LIST[@]} == 0 )); then
+  pick="random"
+else
+  pick=${POKEMON_LIST[RANDOM % ${#POKEMON_LIST[@]}]}
+fi
+# shellcheck disable=SC2086
+sprite=$(pokeget $pick --hide-name)
+
+# Empty sprite (bad name, etc.) → fall back rather than print a blank logo.
+[[ -z "$sprite" ]] && exec fastfetch
+
+height=$(printf '%s\n' "$sprite" | wc -l)
+pad_top=$(( (fetcher_height - height) / 2 + EXTRA_PADDING_H ))
+(( pad_top < 0 )) && pad_top=0
+
+# True printed width = longest line after stripping ANSI color codes.
+sprite_width=$(
+  printf '%s\n' "$sprite" \
+    | sed 's/\x1b\[[0-9;]*m//g' \
+    | awk '{ if (length > max) max = length } END { print max+0 }'
+)
+pad_left=$(( (WIDTH - sprite_width) / 2 + EXTRA_PADDING_W ))
+pad_right=$(( (WIDTH - sprite_width + 1) / 2 + EXTRA_PADDING_W ))  # +1 avoids odd-width drift
+(( pad_left < 0 )) && pad_left=0
+(( pad_right < 0 )) && pad_right=0
+
+printf '%s\n' "$sprite" | fastfetch --file-raw - \
+  --logo-padding-top "$pad_top" \
+  --logo-padding-left "$pad_left" \
+  --logo-padding-right "$pad_right"

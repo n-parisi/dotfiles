@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# claude-tmux-state — reflect Claude Code's state as a glyph in the tmux window tab.
+# Called from Claude Code hooks (see ~/.claude/settings.json). Sets a per-window
+# user option @claude_state that .tmux.conf renders next to the window name.
+#
+# Usage: claude-tmux-state <working|waiting|done|clear>
+# No-ops safely when not inside tmux, so it's harmless outside a tmux session.
+
+[ -z "$TMUX" ] && exit 0          # not in tmux — nothing to do
+[ -z "$TMUX_PANE" ] && exit 0     # no pane context — can't target a window
+
+case "$1" in
+  working) glyph="●"  ;;   # turn in progress
+  waiting) glyph="⏳" ;;   # Claude wants input / permission — needs you
+  done)    glyph="✅" ;;   # turn finished — review it
+  clear|"") glyph=""  ;;   # remove the indicator
+  *) exit 0 ;;             # unknown arg — do nothing rather than error
+esac
+
+# -t "$TMUX_PANE" sets the option on the window CONTAINING this pane.
+# Failures (e.g. window already closed) are non-fatal for a hook.
+tmux set-option -w -t "$TMUX_PANE" @claude_state "$glyph" 2>/dev/null || true

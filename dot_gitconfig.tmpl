@@ -1,0 +1,27 @@
+[user]
+	name = Nick Parisi
+	email = {{ .email }}
+
+[core]
+	pager = delta
+
+[interactive]
+	diffFilter = delta --color-only
+
+[delta]
+	navigate = true
+	side-by-side = true
+	line-numbers = true
+	syntax-theme = Dracula
+
+[merge]
+	conflictstyle = zdiff3
+
+[diff]
+	colorMoved = default
+
+# Work-specific git settings, present only on work machines (the overlay repo is
+# cloned there by the gated .chezmoiexternal entry). Git silently ignores a
+# missing include path, so this is a no-op on personal machines.
+[include]
+	path = ~/.local/share/dotfiles-work/gitconfig.work

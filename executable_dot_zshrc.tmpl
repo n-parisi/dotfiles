@@ -1,0 +1,106 @@
+# Work overlay: on work machines a gated .chezmoiexternal clones the private
+# overlay repo to ~/.local/share/dotfiles-work; this sources its shell config
+# (work env, aliases, account IDs, etc.). On personal machines the file
+# is absent, so the guard is a harmless no-op.
+[ -f ~/.local/share/dotfiles-work/zshrc.work ] && source ~/.local/share/dotfiles-work/zshrc.work
+
+# Use helix as default editor
+export EDITOR="hx"
+export VISUAL="hx"
+
+set-title() {
+    echo -e "\e]0;$*\007"
+}
+
+ssh() {
+    set-title $*;
+    /usr/bin/ssh -2 $*;
+    set-title $HOST;
+}
+
+### UTIL ALIASES ###
+alias ..='cd ..'
+alias t='tmux new-session -A -s {{ .region }}'
+alias ls='lsd'
+
+### GIT ALIASES ###
+alias gst='git status'
+alias gd='git diff'
+alias glol='GIT_PAGER=less git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset"'
+alias gsw='git switch'
+alias gswm='git switch $(git_main_branch)'
+alias grb='git rebase'
+alias grbm='git rebase $(git_main_branch)'
+alias gl='git pull'
+alias ga='git add'
+alias gc='git commit --verbose'
+alias gco='git checkout'
+
+# Machine-local overrides (untracked; per-host tweaks, secrets like webhooks).
+[ -f ~/.zshrc.local ] && source ~/.zshrc.local
+
+# Set up mise for runtime management
+eval "$(~/.local/bin/mise activate zsh)"
+source ~/.local/share/mise/completions.zsh
+
+# One verb to update everything: pull+apply dotfiles (also refreshes prezto/tpm
+# externals), then upgrade every mise-managed tool to the newest release.
+# `update -n` previews what mise would bump without changing anything.
+update() {
+    if [[ "$1" == "-n" || "$1" == "--dry-run" ]]; then
+        echo "== chezmoi (would apply) =="; chezmoi update --dry-run --verbose
+        echo "== mise outdated =="; mise outdated
+        return
+    fi
+    echo "== chezmoi update =="; chezmoi update || return
+    echo "== mise upgrade =="; mise upgrade
+}
+
+# Helper function for git aliases
+function git_main_branch() {
+  command git rev-parse --git-dir &>/dev/null || return
+
+  local remote ref
+
+  for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk,mainline,default,stable,master}; do
+    if command git show-ref -q --verify $ref; then
+      echo ${ref:t}
+      return 0
+    fi
+  done
+
+  # Fallback: try to get the default branch from remote HEAD symbolic refs
+  for remote in origin upstream; do
+    ref=$(command git rev-parse --abbrev-ref $remote/HEAD 2>/dev/null)
+    if [[ $ref == $remote/* ]]; then
+      echo ${ref#"$remote/"}; return 0
+    fi
+  done
+
+  # If no main branch was found, fall back to master but return error
+  echo master
+  return 1
+}
+
+# Prezto
+autoload -Uz compinit && compinit
+source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
+
+KEYTIMEOUT=50
+
+### Post Prezto init Aliases ###
+alias l="ls -a"
+alias cat="bat --paging=never"
+
+# Starship
+export POKE_REGION="{{ .region }}"
+eval "$(starship init zsh)"
+
+# Startup — random Pokémon sprite as the fastfetch logo (falls back to plain
+# fastfetch if pokeget isn't built yet). See ~/.local/bin/pokefetch.
+pokefetch
+
+# Zoxide — must be initialized last so its `cd` override and chpwd hook aren't clobbered by starship/etc.
+# Doctor check disabled: init placement is already correct, and the check misfires in non-interactive shells.
+export _ZO_DOCTOR=0
+eval "$(zoxide init zsh --cmd cd)"

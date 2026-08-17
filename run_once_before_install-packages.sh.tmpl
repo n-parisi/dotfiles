@@ -1,0 +1,52 @@
+#!/bin/bash
+set -euo pipefail
+
+# Bootstrap steps that mise and chezmoi-externals can't own.
+#
+# Tool installs now live in ~/.config/mise/config.toml (mise picks the right
+# arch/libc per machine; `mise upgrade` keeps them current). Git-repo deps
+# (prezto, tpm) live in .chezmoiexternal.toml. What's left here is the small,
+# irreducible residue: mise itself, non-registry downloads (jdtls), and the
+# from-source special case (helix on AL2) which lives in run_onchange_after.
+
+ARCH=$(uname -m)
+
+# Detect OS version (only needed for the AL2 helix note below)
+if grep -q "VERSION_ID=\"2\"" /etc/os-release 2>/dev/null; then
+    OS="al2"
+elif grep -q "VERSION_ID=\"2023\"" /etc/os-release 2>/dev/null; then
+    OS="al2023"
+else
+    OS="unknown"
+fi
+
+echo "Detected: $OS on $ARCH"
+
+# Ensure ~/.local/bin exists (mise + jdtls symlink target)
+mkdir -p ~/.local/bin
+
+# mise (runtime + CLI-tool manager). Everything in ~/.config/mise/config.toml
+# is installed by run_onchange_after_install-mise-tools.sh once mise exists.
+if ! command -v mise &>/dev/null; then
+    curl -sSf https://mise.run | sh
+fi
+
+# jdtls (Java language server) — Eclipse milestone download, not a GitHub
+# release, so no mise backend. Pinned; bump JDTLS_VERSION to update.
+if ! command -v jdtls &>/dev/null; then
+    JDTLS_VERSION="1.58.0"
+    JDTLS_TARBALL=$(curl -sSfL "https://download.eclipse.org/jdtls/milestones/${JDTLS_VERSION}/latest.txt")
+    mkdir -p /tmp/jdtls
+    curl -sSfL "https://download.eclipse.org/jdtls/milestones/${JDTLS_VERSION}/${JDTLS_TARBALL}" -o /tmp/jdtls.tar.gz
+    tar xzf /tmp/jdtls.tar.gz -C /tmp/jdtls
+    rm -rf ~/.local/share/jdtls
+    mv /tmp/jdtls ~/.local/share/jdtls
+    ln -sf ~/.local/share/jdtls/bin/jdtls ~/.local/bin/jdtls
+fi
+
+# prezto/tpm are cloned by chezmoi (.chezmoiexternal.toml). The stock prezto
+# runcom symlinks (~/.zlogin etc.) are managed as chezmoi symlink_ entries;
+# ~/.zpreztorc is a standalone managed file (decoupled from the clone so prezto
+# upgrades never clobber it).
+
+echo "Bootstrap complete!"

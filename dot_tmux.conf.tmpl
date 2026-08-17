@@ -1,0 +1,122 @@
+{{- $accent := "#7aa2f7" -}}
+{{- if eq .region "johto" -}}{{- $accent = "#e0af68" -}}{{- end -}}
+# -- General --
+set -g default-terminal "tmux-256color"
+set -ag terminal-overrides ",xterm-256color:RGB"
+
+set -g mouse on
+set -g allow-rename off
+set -g automatic-rename off
+set-hook -g after-new-session 'rename-window "{{ .region }}"'
+set -g history-limit 50000
+set -sg escape-time 10
+set -g base-index 1
+setw -g pane-base-index 1
+set -g renumber-windows on
+set -g set-titles on
+set -g allow-passthrough on
+set -as terminal-features ",tmux-256color:hyperlinks"
+set -as terminal-features ",tmux-256color:paste"
+set -as terminal-overrides ",xterm-256color:Hls"
+set -g default-command "$SHELL"
+set -g set-clipboard on
+set -g mode-keys vi
+
+# -- Prefix --
+unbind C-b
+set -g prefix C-space
+bind C-space send-prefix
+
+# -- Window navigation without prefix --
+bind -n M-t new-window -n "{{ .region }}"
+bind -n M-[ previous-window
+bind -n M-] next-window
+bind -n "M-{" swap-window -t -1\; previous-window
+bind -n "M-}" swap-window -t +1\; next-window
+bind -n "M-." command-prompt -I "#W" "rename-window '%%'"
+bind -n "M-w" kill-pane
+
+# -- Pane splitting --
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+# -- Pane navigation -- 
+bind Left select-pane -L
+bind Right select-pane -R
+bind Up select-pane -U
+bind Down select-pane -D
+# -- Pane resizing with prefix --
+bind -r M-Left resize-pane -L 5
+bind -r M-Right resize-pane -R 5
+bind -r M-Up resize-pane -U 5
+bind -r M-Down resize-pane -D 5
+# -- Send pane to target window --
+bind @ command-prompt -p "send pane to window:" "join-pane -t '%%'"
+
+# -- Reload config --
+bind r source-file ~/.tmux.conf \; display "Config reloaded!"
+
+# -- Status bar (powerline, region-accented via $accent) --
+# NOTE: separators  and  are Nerd Font glyphs. If they render as
+# boxes/tofu, swap them for a plain space or a Unicode block (e.g. ▏ ▕).
+set -g status-position bottom
+set -g status-interval 5
+set -g status-justify left
+set -g status-style "bg=#1a1b26,fg=#565f89"
+
+# Left: region identity pill (◓ = pokéball nod), flowing into the window list
+set -g status-left "#[bg={{ $accent }},fg=#1a1b26,bold] ◓ {{ .region }} #[fg={{ $accent }},bg=#1a1b26]#[default] "
+
+# Windows: dim/flat when inactive, accented powerline pill when current.
+# #{@claude_state} is a per-window glyph set by ~/.local/bin/claude-tmux-state
+# from Claude Code hooks (● working, ⏳ waiting on you, ✅ done).
+set -g window-status-format "#[fg=#565f89] ◓ #I:#W#{?@claude_state, #{@claude_state},} "
+set -g window-status-current-format "#[fg={{ $accent }},bg=#1a1b26]#[bg={{ $accent }},fg=#1a1b26,bold] ◓ #I:#W#{?@claude_state, #{@claude_state},} #[fg={{ $accent }},bg=#1a1b26]#[default]"
+
+# Right: prefix indicator (only shown while prefix is armed) + clock
+set -g status-right "#{?client_prefix,#[fg=#f7768e,bg=#1a1b26]#[bg=#f7768e,fg=#1a1b26,bold] PREFIX #[default],}#[fg={{ $accent }},bg=#1a1b26]#[bg={{ $accent }},fg=#1a1b26,bold] #(TZ='America/New_York' date +%%H:%%M) #[default]"
+
+set -g pane-border-style "fg=#565f89"
+set -g pane-active-border-style "fg={{ $accent }}"
+set -g message-style "bg={{ $accent }},fg=#1a1b26"
+set -g status-left-length 40
+set -g status-right-length 60
+
+# Activity Monitoring
+setw -g monitor-activity on
+set -g visual-activity off
+set -g window-status-activity-style "fg=#f7768e"
+
+# Copy mode
+# Enter: smart copy — collapses terminal soft-wraps, keeps paragraph breaks. Good for prose/Slack.
+# tmux's own OSC 52 (from set-clipboard on) fires first with raw text, then the helper fires
+# OSC 52 with processed text. Last write wins, so Slack/iTerm receive the processed version.
+bind-key -T copy-mode    Enter send-keys -X copy-pipe "~/.local/bin/tmux-copy-smart"
+bind-key -T copy-mode-vi Enter send-keys -X copy-pipe "~/.local/bin/tmux-copy-smart"
+
+# Y: literal copy — preserves every newline. Use for code, configs, indentation-sensitive text.
+bind-key -T copy-mode-vi Y send-keys -X copy-pipe
+
+# URL selection — pick a URL from the pane and copy to local clipboard via OSC 52
+bind u run-shell "~/.local/bin/tmux-url-pick"
+
+# -- Plugins (tpm) --
+# NOTE: deliberately NOT using tmux-sensible (would override tuned escape-time /
+# history-limit above) or tmux-yank (would fight the custom copy-pipe binds below).
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-resurrect'   # save/restore windows, panes, layouts, cwd
+set -g @plugin 'tmux-plugins/tmux-continuum'   # auto-save + auto-restore on server start
+
+# resurrect: also snapshot pane scrollback contents
+set -g @resurrect-capture-pane-contents 'on'
+# continuum: auto-save every 15 min, and restore automatically when the tmux
+# server starts (survives machine reboot). Restores layout/cwd, NOT live procs.
+set -g @continuum-save-interval '15'
+set -g @continuum-restore 'on'
+
+# Manual controls (from tmux-resurrect): prefix + Ctrl-s = save, prefix + Ctrl-r = restore
+
+# Keep this as the VERY LAST line — tpm loads and inits all plugins here.
+run '~/.tmux/plugins/tpm/tpm'
+
+# LEGACY
+# set -g set-titles-string "◓ {{ .region }}  #I"

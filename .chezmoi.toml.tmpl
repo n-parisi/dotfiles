@@ -1,0 +1,11 @@
+{{- $email  := promptStringOnce . "email"  "Git email" -}}
+{{- $region := promptStringOnce . "region" "Pokémon region (kanto/johto)" "kanto" -}}
+{{- $work   := promptBoolOnce   . "work"   "Is this a work machine?" false -}}
+[data]
+  email  = {{ $email | quote }}
+  region = {{ $region | quote }}
+  work   = {{ $work }}
+{{- if $work }}
+  # Prompted only on work machines, so no internal URL is stored in the public repo.
+  workRepoUrl = {{ (promptStringOnce . "workRepoUrl" "Work overlay repo git URL") | quote }}
+{{- end }}

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Read tmux selection on stdin, collapse terminal soft-wrap line breaks,
+# and emit the result to the outer terminal's clipboard via OSC 52.
+#
+# Used as: send-keys -X copy-pipe "~/.local/bin/tmux-copy-smart"
+# tmux's set-clipboard emits OSC 52 with the raw selection first, then this
+# script emits OSC 52 with the processed text. Last write wins, so the
+# outer terminal's clipboard ends up with the processed version.
+
+text=$(perl -0777 -pe '
+  # Single \n -> space, swallowing leading whitespace on the next line.
+  # Skip the join when the next line (after optional indent) starts with:
+  #   - a list marker: "- ", "* ", "• ", "1. ", "1) "
+  #   - another \n (paragraph break)
+  # The negative lookahead is checked *before* consuming whitespace, so the
+  # greedy [ \t]* in the join cannot backtrack past a bullet line.
+  s/(?<!\n)\n(?![ \t]*(?:[-*\x{2022}][ \t]|\d+[.)][ \t]|\n))[ \t]*/ /g;
+  s/[ \t]{2,}/ /g;          # collapse runs of spaces
+')
+
+encoded=$(printf '%s' "$text" | base64 -w0)
+printf '\ePtmux;\e\033]52;c;%s\033\\\e\\' "$encoded" > "$(tmux display -p '#{pane_tty}')"
