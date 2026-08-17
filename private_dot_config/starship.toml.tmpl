@@ -1,3 +1,6 @@
+{{- $accent := "bold blue" -}}                              {{/* kanto (default) */}}
+{{- if eq .region "johto" -}}{{- $accent = "bold yellow" -}}
+{{- else if eq .region "hoenn" -}}{{- $accent = "bold green" -}}{{- end -}}
 "$schema" = 'https://starship.rs/config-schema.json'
 format = '$username on ◓$env_var in $all'
 
@@ -8,21 +11,11 @@ style_user = 'bold yellow'
 
 [env_var.POKE_REGION]
 format = '[$env_value]($style)'
-{{ if eq .region "johto" -}}
-style = 'bold yellow'
-{{ else -}}
-style = 'bold blue'
-{{ end -}}
+style = '{{ $accent }}'
 
-{{ if eq .region "johto" -}}
 [character]
-success_symbol = '[❯](bold yellow)'
+success_symbol = '[❯]({{ $accent }})'
 error_symbol = '[✗](bold red)'
-{{ else -}}
-[character]
-success_symbol = '[❯](bold blue)'
-error_symbol = '[✗](bold red)'
-{{ end -}}
 
 [aws]
 symbol = " "

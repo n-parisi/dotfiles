@@ -1,5 +1,6 @@
-{{- $accent := "#7aa2f7" -}}
-{{- if eq .region "johto" -}}{{- $accent = "#e0af68" -}}{{- end -}}
+{{- $accent := "#7aa2f7" -}}                                {{/* kanto (default) — blue */}}
+{{- if eq .region "johto" -}}{{- $accent = "#e0af68" -}}    {{/* johto — gold */}}
+{{- else if eq .region "hoenn" -}}{{- $accent = "#9ece6a" -}}{{- end -}}  {{/* hoenn — emerald green */}}
 # -- General --
 set -g default-terminal "tmux-256color"
 set -ag terminal-overrides ",xterm-256color:RGB"
