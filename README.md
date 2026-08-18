@@ -1,111 +1,154 @@
 # dotfiles
 
 Personal, machine-agnostic dotfiles managed with [chezmoi](https://chezmoi.io)
-and [mise](https://mise.jdx.dev). Generic config only — safe for any machine.
-Work-specific config lives in a separate private overlay repo and is layered on
-top automatically on work machines (see below).
+and [mise](https://mise.jdx.dev). This repo contains only generic, safe-for-any-machine
+configuration. Work-specific config lives in a separate private overlay repo
+and is layered on top automatically on machines flagged as work machines (see
+[Work machines](#work-machines-overlay)).
 
-## New machine
+## Quick start
 
 ```sh
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply n-parisi/dotfiles
 ```
 
-chezmoi prompts for:
+`chezmoi init` prompts for the following before the first apply:
 
-- **email** — used for `~/.gitconfig`.
-- **region** — cosmetic theme (`kanto`/`johto`/`hoenn`) for tmux/starship/fastfetch.
-- **work machine?** — `n` on a personal machine (nothing else needed).
+| Prompt | Purpose | Example / default |
+|---|---|---|
+| `email` | Used for `~/.gitconfig` | `you@example.com` |
+| `region` | Cosmetic accent theme applied to tmux, starship, and fastfetch | `kanto` (default), `johto`, `hoenn` |
+| `work machine?` | Gates whether the private work overlay is fetched | `n` on personal machines |
 
-On first apply, mise installs the pinned toolchain (JDK/node/python/rust + CLI
-tools) and chezmoi clones prezto + tpm. This can take a few minutes once.
+On a personal machine (`work = n`), nothing further is required. On first
+apply, mise installs the pinned toolchain and chezmoi clones its two git-repo
+dependencies (prezto, tpm). This can take a few minutes the first time.
 
 ## Work machines (overlay)
 
-Answer `y` to "work machine?" and provide the private overlay repo URL when
-prompted. chezmoi then clones that repo to `~/.local/share/dotfiles-work` and:
+Answering `y` to "work machine?" prompts for the private overlay repo URL.
+chezmoi then clones that repo to `~/.local/share/dotfiles-work` and layers it
+on top of the base config:
 
-- `~/.zshrc` sources `zshrc.work` (work env, aliases, account IDs, …).
-- `~/.gitconfig` includes `gitconfig.work`.
+| File | What the overlay adds |
+|---|---|
+| `~/.zshrc` | Sources `zshrc.work` (work environment variables, aliases, account IDs) |
+| `~/.gitconfig` | Includes `gitconfig.work` (work git identity/signing config) |
 
-Personal machines never fetch the overlay (the `.chezmoiexternal` entry is gated
-on `work = true`), so no internal URLs or config ever reach this public repo.
+Personal machines never fetch the overlay — the `.chezmoiexternal` entry for
+it is gated on `work = true` — so no internal URLs or work-specific config
+ever reach this public repo.
 
-## What's here
-
-A tour of what's managed and how the pieces fit together. Not an exhaustive
-keybind reference — see the source files for that (`dot_tmux.conf.tmpl`,
-`executable_dot_zshrc.tmpl`, etc.).
+## What's managed
 
 ### Shell — zsh + prezto
 
-Prezto modules: environment, terminal, editor, history, directory, completion,
-history-substring-search, git, prompt, syntax-highlighting. Helix (`hx`) is
-`$EDITOR`/`$VISUAL`. Notable aliases: `gst`/`gd`/`gsw`/`grb`/`gl`/`ga`/`gc`/`gco`/`glol`
-(git), `l`/`ls` → `lsd`, `cat` → `bat`, `t` → `tmux new-session -A -s <region>`.
-`ssh` is wrapped to set the terminal title to the target host for the
-connection's duration. zoxide replaces `cd` (must init last so nothing
-clobbers its hook); fzf/bat/lsd/glow round out the CLI.
+| Area | Detail |
+|---|---|
+| Framework | [prezto](https://github.com/sorin-ionescu/prezto), modules: environment, terminal, editor, history, directory, completion, history-substring-search, git, prompt, syntax-highlighting |
+| Editor | Helix (`hx`) is `$EDITOR`/`$VISUAL` |
+| Git aliases | `gst`, `gd`, `gsw`, `grb`, `gl`, `ga`, `gc`, `gco`, `glol` |
+| Tool aliases | `l`/`ls` → `lsd`, `cat` → `bat` |
+| Tmux shortcut | `t` → `tmux new-session -A -s <region>` |
+| SSH wrapper | Sets the terminal title to the target host for the duration of the connection |
+| Navigation | zoxide replaces `cd` (initialized last so nothing overrides its hook) |
+| Other CLI tools wired in | fzf, bat, lsd, glow |
 
 ### Prompt & startup — starship, fastfetch, pokefetch
 
-starship is a minimal one-liner prompt (`user on ◓<region> in <context>`) with
-an accent color keyed to `region` (kanto=blue, johto=gold, hoenn=green).
-Every new shell runs `pokefetch`: a fastfetch system-info panel with a random
-Pokémon sprite (via `pokeget`) as the logo instead of an OS logo, sized to
-match the info panel. Falls back to plain fastfetch if `pokeget` isn't built
-yet (fresh machine, before the bootstrap script runs).
+| Component | Purpose |
+|---|---|
+| starship | Minimal one-line prompt (`user on ◓<region> in <context>`); accent color keyed to `region` (kanto = blue, johto = gold, hoenn = green) |
+| fastfetch | System-info panel shown on every new shell via the `pokefetch` wrapper |
+| pokefetch | Runs fastfetch with a random Pokémon sprite (via `pokeget`) in place of the OS logo, sized to match the info panel. Falls back to plain fastfetch if `pokeget` hasn't been built yet (fresh machine, before bootstrap completes) |
 
 ### tmux
 
-Prefix is `C-space` (not the default `C-b`). Window nav without prefix:
-`M-t` new window, `M-[`/`M-]` prev/next, `M-{`/`M-}` swap, `M-.` rename,
-`M-w` kill pane. Splits: `|`/`-`. Pane nav: arrow keys (no prefix). Resize:
-prefix + `M-arrow`. The status bar is region-accented to match starship, and
-each window tab can show a glyph (`●`/`⏳`/`✅`) driven by Claude Code hooks via
-`~/.local/bin/claude-tmux-state` — a glance tells you which window Claude is
-working in, waiting on you, or has finished in. Copy mode: `Enter` is "smart"
-copy (collapses soft-wrapped lines, keeps paragraph/list breaks — good for
-prose), `Y` is literal copy (preserves every newline — good for code); both go
-out over OSC 52. `prefix u` greps the pane for URLs, fzf-picks one, and copies
-it. `tmux-resurrect`/`tmux-continuum` autosave every 15 min and restore
-layout/cwd on server start; manual save/restore is `prefix Ctrl-s`/`Ctrl-r`.
+| Area | Detail |
+|---|---|
+| Prefix | `C-space` (not the tmux default `C-b`) |
+| Window navigation (no prefix) | `M-t` new window · `M-[`/`M-]` prev/next · `M-{`/`M-}` swap · `M-.` rename · `M-w` kill pane |
+| Splits | `\|` / `-` |
+| Pane navigation | Arrow keys, no prefix |
+| Resize | prefix + `M-arrow` |
+| Status bar | Region-accented to match starship |
+| Claude Code integration | Each window tab can show a glyph (`●` / `⏳` / `✅`) driven by Claude Code hooks via `~/.local/bin/claude-tmux-state`, indicating at a glance which window Claude is working in, waiting on input in, or has finished in |
+| Copy mode | `Enter` = "smart" copy (collapses soft-wrapped lines, keeps paragraph/list breaks — good for prose); `Y` = literal copy (preserves every newline — good for code); both go out over OSC 52 |
+| URL grab | `prefix u` greps the pane for URLs, fzf-picks one, and copies it |
+| Session persistence | tmux-resurrect / tmux-continuum autosave every 15 min and restore layout/cwd on server start; manual save/restore via `prefix Ctrl-s` / `Ctrl-r` |
 
 ### Git & code review
 
-`delta` is the pager for `git diff` and interactive staging (side-by-side,
-line numbers, Dracula theme), with `zdiff3` conflict markers. `gh` is wired as
-the credential helper for github.com/gist.github.com HTTPS, so `gh auth login`
-once and `git push` just works. `tig` is tuned for relative dates, abbreviated
-authors, mouse support, and first-parent diffs.
+| Tool | Role |
+|---|---|
+| `delta` | Pager for `git diff` and interactive staging — side-by-side view, line numbers, Dracula theme, `zdiff3` conflict markers |
+| `gh` | Wired as the credential helper for github.com / gist.github.com over HTTPS — run `gh auth login` once and `git push` works from then on |
+| `tig` | Tuned for relative dates, abbreviated authors, mouse support, and first-parent diffs |
 
 ### Editor
 
-Helix (`hx`) is the daily driver: kanagawa theme, relative line numbers,
-auto-save, multi-buffer bufferline, hidden files visible in the picker, indent
-guides, soft wrap, and `jdtls` wired up as the Java language server. vimrc is
-kept around as a lightweight fallback (line numbers, sane search/indent,
-mouse off).
+| Editor | Role |
+|---|---|
+| Helix (`hx`) | Daily driver — kanagawa theme, relative line numbers, auto-save, multi-buffer bufferline, hidden files visible in the file picker, indent guides, soft wrap, `jdtls` wired up as the Java language server |
+| vim | Lightweight fallback — line numbers, sane search/indent defaults, mouse off |
 
 ### Toolchain — mise
 
-`~/.config/mise/config.toml` pins CLI tools (bat, delta, lsd, fzf, zoxide,
-starship, glow, gh, bun, fastfetch, helix) at `latest`, and languages: node 20,
-python 3.10-3.12, rust latest, java (Corretto 21). `update` (see below) keeps
-all of it current. A couple of tools mise can't cover are bootstrapped by
-`run_once`/`run_onchange` scripts instead — notably `jdtls` (Eclipse milestone
-download, no mise backend) and, only on old-glibc boxes like Amazon Linux 2,
-`helix`/`pokeget` built from source because their prebuilt releases need newer
-glibc than AL2 ships.
+`~/.config/mise/config.toml` is the source of truth for installed tool
+versions. `update` (see [Everyday use](#everyday-use)) keeps everything
+current.
+
+**CLI tools** (pinned to `latest`, mise resolves the correct arch/libc build per machine):
+
+| Tool | Purpose |
+|---|---|
+| `bat` | `cat` replacement with syntax highlighting |
+| `delta` | Git diff pager |
+| `lsd` | `ls` replacement with icons/color |
+| `fzf` | Fuzzy finder |
+| `zoxide` | Smarter `cd` |
+| `starship` | Shell prompt |
+| `glow` | Markdown renderer |
+| `gh` | GitHub CLI — auth + push for this repo |
+| `bun` | JS runtime and package manager |
+| `fastfetch` | System-info banner (polyfilled build on AL2 for glibc compatibility) |
+| `helix` | Editor (mise-managed everywhere except AL2 — see below) |
+
+**Language runtimes** (pinned for reproducibility):
+
+| Runtime | Version |
+|---|---|
+| Node | `20` (mise upgrade moves within the pin) |
+| Python | `3.12`, `3.11`, `3.10` |
+| Rust | `latest` (also used to build helix/pokeget from source on AL2) |
+| Java | Corretto 21 (mise sets `JAVA_HOME` automatically when active) |
+
+**Bootstrapped outside mise** — a couple of tools mise can't cover:
+
+| Tool | Why it's not mise-managed | How it's installed |
+|---|---|---|
+| `jdtls` (Java language server) | Eclipse milestone download, no mise backend | `run_once_before_install-packages.sh.tmpl` downloads and pins a specific version |
+| `helix` on Amazon Linux 2 only | Prebuilt release needs glibc ≥ 2.29; AL2 ships 2.26 | Built from source via `run_onchange_after_install-mise-tools.sh.tmpl` |
+| `pokeget` | Prebuilt release needs glibc ≥ 2.34 (dead on AL2); not published to crates.io | Built from source from its git repo on every machine, `--locked` (required — an unpinned build pulls a broken `zune-jpeg` version) |
 
 ### Theming
 
-The `region` answer (kanto/johto/hoenn) from `chezmoi init` threads one accent
-color and a matching Pokémon flavor through tmux's status bar, starship's
-prompt, and fastfetch's banner — one knob, three tools.
+The `region` answer from `chezmoi init` (`kanto` / `johto` / `hoenn`) threads
+one accent color and a matching Pokémon flavor through three tools at once:
+tmux's status bar, starship's prompt, and fastfetch's banner.
 
 ## Everyday use
 
-- `update` — pull + apply dotfiles (refreshes prezto/tpm/overlay) then
-  `mise upgrade`. `update -n` previews without changing anything.
-- `chezmoi edit <file>` / `chezmoi apply` — edit and apply managed files.
+| Command | Effect |
+|---|---|
+| `update` | Pull + apply dotfiles (refreshing prezto/tpm/overlay), then `mise upgrade` |
+| `update -n` | Same as above, but preview-only — no changes made |
+| `chezmoi edit <file>` | Edit a chezmoi-managed file |
+| `chezmoi apply` | Apply pending changes to managed files |
+
+## Not covered here
+
+This README is a map of what's set up and why, not an exhaustive reference.
+For full keybindings and options, read the source templates directly —
+`dot_tmux.conf.tmpl`, `executable_dot_zshrc.tmpl`, and the files under
+`private_dot_config/`.
