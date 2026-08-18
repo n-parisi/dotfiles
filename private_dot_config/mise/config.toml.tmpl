@@ -13,14 +13,14 @@ starship = "latest"
 glow = "latest"
 gh = "latest"      # GitHub CLI — auth + push for the base repo (this dotfiles repo)
 bun = "latest"     # JS runtime + package manager; mise's core:bun backend picks the right per-OS/arch build
-{{ if eq .chezmoi.osRelease.versionID "2" -}}
+{{ if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.versionID "2") -}}
 # fastfetch: the default release binary needs glibc >= 2.33. AL2 (glibc 2.26)
 # needs the upstream "-polyfilled" variant, selected here via the ubi backend.
 "ubi:fastfetch-cli/fastfetch[matching=polyfilled,exe=fastfetch]" = "latest"
 {{ else -}}
 fastfetch = "latest"
 {{ end -}}
-{{ if ne .chezmoi.osRelease.versionID "2" -}}
+{{ if not (and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.versionID "2")) -}}
 # helix: mise's prebuilt needs glibc >= 2.29. That holds everywhere EXCEPT
 # Amazon Linux 2 (glibc 2.26), which builds from source in run_onchange instead.
 helix = "latest"
@@ -31,7 +31,7 @@ helix = "latest"
 # (e.g. newest 20.x). rust stays `latest` — also used to build helix from
 # source on AL2 (see run_onchange_after_install-mise-tools.sh.tmpl).
 node = "20"
-python = ["3.12", "3.11", "3.10", "3.9", "3.8"]
+python = ["3.12", "3.11", "3.10"]
 rust = "latest"
 # java: mise sets JAVA_HOME automatically when active, so no hardcoded path in
 # .zshrc. Corretto is a public OpenJDK distro (glibc >= 2.17, fine on AL2) and
@@ -41,3 +41,9 @@ java = "corretto-21"
 # NOT mise-managed:
 #   helix on AL2 -> built from source (run_onchange_after_install-mise-tools.sh)
 #   jdtls        -> Eclipse milestone download, no mise backend (run_once_before)
+
+[settings]
+# Some python-build-standalone release artifacts predate mise's GitHub
+# attestation verification and fail to install even on supported versions
+# (e.g. 3.11.5). See https://github.com/jdx/mise/discussions/8843
+python.github_attestations = false

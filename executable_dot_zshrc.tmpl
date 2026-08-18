@@ -39,8 +39,14 @@ alias gco='git checkout'
 # Machine-local overrides (untracked; per-host tweaks, secrets like webhooks).
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
 
+# compinit must run before anything that registers completions via `compdef`
+# (mise below, omp further down) — otherwise `compdef: command not found`.
+autoload -Uz compinit && compinit
+
 # Set up mise for runtime management
 eval "$(~/.local/bin/mise activate zsh)"
+# mise doesn't ship a completions file on disk; generate it once and cache it.
+[[ -f ~/.local/share/mise/completions.zsh ]] || { mkdir -p ~/.local/share/mise; mise completion zsh > ~/.local/share/mise/completions.zsh; }
 source ~/.local/share/mise/completions.zsh
 
 # One verb to update everything: pull+apply dotfiles, then upgrade every
@@ -90,7 +96,6 @@ function git_main_branch() {
 eval "$(omp completions zsh)"
 
 # Prezto
-autoload -Uz compinit && compinit
 source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 
 KEYTIMEOUT=50
