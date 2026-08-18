@@ -52,14 +52,17 @@ eval "$(~/.local/bin/mise activate zsh)"
 [[ -f ~/.local/share/mise/completions.zsh ]] || { mkdir -p ~/.local/share/mise; mise completion zsh > ~/.local/share/mise/completions.zsh; }
 source ~/.local/share/mise/completions.zsh
 
-# One verb to update everything: pull+apply dotfiles, then upgrade every
-# mise-managed tool to the newest release. `update -n` previews what mise would
-# bump without changing anything.
+# One verb to update everything: pull+apply dotfiles, then upgrade mise itself
+# and every mise-managed tool to the newest release. `update -n` previews what
+# mise would bump without changing anything.
 #   -R/--refresh-externals=always FORCES a git pull of every external (prezto,
 #   tpm, and the work overlay) on each `update`. Without it chezmoi honors each
 #   external's refreshPeriod (weekly), so a work-overlay edit pushed from another
 #   machine could take up to a week to arrive. `update` is the deliberate sync
 #   command, so we always refresh; plain `chezmoi apply` still stays fast.
+#   mise self-update runs before `mise upgrade` so config.toml settings that
+#   only newer mise versions understand don't drift stale on any one machine
+#   (this is what broke Linux after a macOS-only mise setting was added).
 update() {
     if [[ "$1" == "-n" || "$1" == "--dry-run" ]]; then
         echo "== chezmoi (would apply) =="; chezmoi update --dry-run --verbose
@@ -67,6 +70,7 @@ update() {
         return
     fi
     echo "== chezmoi update =="; chezmoi update -R || return
+    echo "== mise self-update =="; mise self-update --yes
     echo "== mise upgrade =="; mise upgrade
 }
 

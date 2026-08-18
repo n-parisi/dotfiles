@@ -15,8 +15,9 @@ gh = "latest"      # GitHub CLI — auth + push for the base repo (this dotfiles
 bun = "latest"     # JS runtime + package manager; mise's core:bun backend picks the right per-OS/arch build
 {{ if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.versionID "2") -}}
 # fastfetch: the default release binary needs glibc >= 2.33. AL2 (glibc 2.26)
-# needs the upstream "-polyfilled" variant, selected here via the ubi backend.
-"ubi:fastfetch-cli/fastfetch[matching=polyfilled,exe=fastfetch]" = "latest"
+# needs the upstream "-polyfilled" variant, selected here via the github backend
+# (ubi backend is deprecated, removed in mise 2027.1.0).
+"github:fastfetch-cli/fastfetch[matching=polyfilled,exe=fastfetch]" = "latest"
 {{ else -}}
 fastfetch = "latest"
 {{ end -}}
