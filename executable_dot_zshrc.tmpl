@@ -39,6 +39,9 @@ alias gco='git checkout'
 # PATH
 export PATH="/local/home/nkparisi/.bun/bin:$PATH"
 
+# if you wish to use IMDS set AWS_EC2_METADATA_DISABLED=false
+export AWS_EC2_METADATA_DISABLED=true
+
 # Machine-local overrides (untracked; per-host tweaks, secrets like webhooks).
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
 

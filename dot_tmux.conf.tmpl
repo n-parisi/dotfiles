@@ -103,21 +103,21 @@ bind u run-shell "~/.local/bin/tmux-url-pick"
 # -- Plugins (tpm) --
 # NOTE: deliberately NOT using tmux-sensible (would override tuned escape-time /
 # history-limit above) or tmux-yank (would fight the custom copy-pipe binds below).
-set -g @plugin 'tmux-plugins/tpm'
-set -g @plugin 'tmux-plugins/tmux-resurrect'   # save/restore windows, panes, layouts, cwd
-set -g @plugin 'tmux-plugins/tmux-continuum'   # auto-save + auto-restore on server start
+# set -g @plugin 'tmux-plugins/tpm'
+# set -g @plugin 'tmux-plugins/tmux-resurrect'   # save/restore windows, panes, layouts, cwd
+# set -g @plugin 'tmux-plugins/tmux-continuum'   # auto-save + auto-restore on server start
 
 # resurrect: also snapshot pane scrollback contents
-set -g @resurrect-capture-pane-contents 'on'
+# set -g @resurrect-capture-pane-contents 'on'
 # continuum: auto-save every 15 min, and restore automatically when the tmux
 # server starts (survives machine reboot). Restores layout/cwd, NOT live procs.
-set -g @continuum-save-interval '15'
-set -g @continuum-restore 'on'
+# set -g @continuum-save-interval '15'
+# set -g @continuum-restore 'on'
 
 # Manual controls (from tmux-resurrect): prefix + Ctrl-s = save, prefix + Ctrl-r = restore
 
 # Keep this as the VERY LAST line — tpm loads and inits all plugins here.
-run '~/.tmux/plugins/tpm/tpm'
+# run '~/.tmux/plugins/tpm/tpm'
 
 # LEGACY
 # set -g set-titles-string "◓ {{ .region }}  #I"
