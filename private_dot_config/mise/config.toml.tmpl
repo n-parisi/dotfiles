@@ -26,7 +26,12 @@ fastfetch = "latest"
 # Amazon Linux 2 (glibc 2.26), which builds from source in run_onchange instead.
 helix = "latest"
 {{ end -}}
-
+{{ if and .work (eq .chezmoi.os "linux") -}}
+# zmx: terminal session persistence (the tmux replacement). Only the remote dev
+# desktop ever *hosts* sessions; the mac is purely an ssh client and has no use
+# for the binary. Gated on work as well, so a personal linux box also skips it.
+zmx = "latest"
+{{ end }}
 # --- Language runtimes (pinned for reproducibility) ---
 # node/python stay major-pinned; `mise upgrade` moves them within the pin
 # (e.g. newest 20.x). rust stays `latest` — also used to build helix from

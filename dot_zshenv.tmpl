@@ -1,0 +1,31 @@
+#
+# Defines environment variables.
+#
+# Authors:
+#   Sorin Ionescu <sorin.ionescu@gmail.com>
+#
+
+# Ensure that a non-login, non-interactive shell has a defined environment.
+if [[ ( "$SHLVL" -eq 1 && ! -o LOGIN ) && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; then
+  source "${ZDOTDIR:-$HOME}/.zprofile"
+fi
+
+# rustup/cargo env (puts ~/.cargo/bin on PATH, incl. source-built hx on AL2).
+# Guarded: the file only exists once rustup has run; skip it otherwise.
+[[ -s "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
+
+# mise shims, so mise-managed tools resolve in shells that never source .zshrc.
+# `mise activate` lives in .zshrc, which zsh skips for non-interactive shells —
+# including `ssh host cmd` and ssh RemoteCommand. Shims are mise's supported
+# answer for exactly that case. Needed for `RemoteCommand zmx attach %k`.
+[[ -d "$HOME/.local/share/mise/shims" ]] && path=("$HOME/.local/share/mise/shims" $path)
+
+{{ if and .work (eq .chezmoi.os "linux") -}}
+# zmx socket dir. zmx prefers ZMX_DIR, then XDG_RUNTIME_DIR, then TMPDIR. The
+# default lands in $XDG_RUNTIME_DIR (/run/user/$UID), which systemd-logind
+# removes on last logout while Linger=no — that orphans live sessions the moment
+# every ssh connection drops. /tmp is what tmux has always used here, and is
+# untouched by logind. Must live in .zshenv so the attaching client (via ssh
+# RemoteCommand, non-interactive) and interactive `zmx ls` agree on one dir.
+export ZMX_DIR="/tmp/zmx-$UID"
+{{ end -}}

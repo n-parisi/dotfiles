@@ -2,7 +2,9 @@
 {{- if eq .region "johto" -}}{{- $accent = "bold yellow" -}}
 {{- else if eq .region "hoenn" -}}{{- $accent = "bold green" -}}{{- end -}}
 "$schema" = 'https://starship.rs/config-schema.json'
-format = '$username on ◓$env_var in $all'
+{{/* env_var instances are addressed by name: a bare $env_var renders them all
+     concatenated, which would glue the zmx session onto the region glyph. */}}
+format = '$username on ◓${env_var.POKE_REGION} ${env_var.ZMX_SESSION}in $all'
 
 [username]
 show_always = true
@@ -12,6 +14,12 @@ style_user = 'bold yellow'
 [env_var.POKE_REGION]
 format = '[$env_value]($style)'
 style = '{{ $accent }}'
+
+# zmx injects ZMX_SESSION into every session it spawns, so this shows which
+# session the shell belongs to and renders nothing outside one.
+[env_var.ZMX_SESSION]
+format = '[󰆍 $env_value]($style) '
+style = 'bold purple'
 
 [character]
 success_symbol = '[❯]({{ $accent }})'
