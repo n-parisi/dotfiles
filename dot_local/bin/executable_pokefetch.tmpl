@@ -6,6 +6,20 @@
 # Degrades gracefully: if pokeget isn't installed yet (fresh machine, before
 # run_onchange builds it) it falls back to plain fastfetch, so shell startup
 # never errors out.
+#
+# The pick is pinned per day: the first run of the day caches the rendered
+# sprite in $XDG_CACHE_HOME/pokefetch/today and later runs reuse it.
+# `pokefetch -r` re-rolls today's Pokémon. The cache is disposable; deleting it
+# just re-rolls.
+#
+# Usage: pokefetch [-r|--reroll]
+
+reroll=0
+case "${1:-}" in
+  "") ;;
+  -r|--reroll) reroll=1 ;;
+  *) echo "usage: pokefetch [-r|--reroll]" >&2; exit 2 ;;
+esac
 
 # Pokémon to pick from at random. Anything after the name is passed straight to
 # pokeget (e.g. -s for shiny, --mega-y for forms — see `pokeget --help`).
@@ -21,26 +35,45 @@ EXTRA_PADDING_W=0   # extra horizontal padding
 WIDTH=38            # sprite display column budget
 
 # Missing either tool (fresh machine / build pending) → plain fastfetch, no error.
-if ! command -v pokeget &>/dev/null; then
-  command -v fastfetch &>/dev/null && exec fastfetch
-  exit 0
-fi
+command -v fastfetch &>/dev/null || exit 0
+command -v pokeget &>/dev/null || exec fastfetch
 
 # Info-panel height, so we can vertically center the sprite against it.
 fetcher_height=$(fastfetch --logo none | wc -l)
 
-# Empty list → let pokeget choose (its built-in "random"). Otherwise pick a
-# random entry; word-split so "mimikyu -s" becomes name + flag.
-if (( ${#POKEMON_LIST[@]} == 0 )); then
-  pick="random"
-else
-  pick=${POKEMON_LIST[RANDOM % ${#POKEMON_LIST[@]}]}
+# Today's pinned sprite: line 1 of the cache file is the date, the rest is the
+# rendered sprite. Caching the sprite (not the name) also pins region picks,
+# where pokeget chooses the Pokémon internally.
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/pokefetch"
+cache="$cache_dir/today"
+today=$(date +%F)
+sprite=""
+if (( ! reroll )) && [[ -f "$cache" ]] && [[ "$(head -n 1 "$cache")" == "$today" ]]; then
+  sprite=$(tail -n +2 "$cache")
 fi
-# shellcheck disable=SC2086
-sprite=$(pokeget $pick --hide-name)
 
-# Empty sprite (bad name, etc.) → fall back rather than print a blank logo.
-[[ -z "$sprite" ]] && exec fastfetch
+if [[ -z "$sprite" ]]; then
+  # Empty list → let pokeget choose (its built-in "random"). Otherwise pick a
+  # random entry; word-split so "mimikyu -s" becomes name + flag.
+  if (( ${#POKEMON_LIST[@]} == 0 )); then
+    pick="random"
+  else
+    pick=${POKEMON_LIST[RANDOM % ${#POKEMON_LIST[@]}]}
+  fi
+  # shellcheck disable=SC2086
+  sprite=$(pokeget $pick --hide-name)
+
+  # Empty sprite (bad name, etc.) → fall back rather than print a blank logo.
+  [[ -z "$sprite" ]] && exec fastfetch
+
+  # Write-then-rename so shells starting at the same time never read a
+  # half-written file. A failed write only costs the pin, never the output.
+  if ! { mkdir -p "$cache_dir" \
+         && printf '%s\n%s\n' "$today" "$sprite" > "$cache.$$" \
+         && mv -f "$cache.$$" "$cache"; } 2>/dev/null; then
+    rm -f "$cache.$$" 2>/dev/null
+  fi
+fi
 
 height=$(printf '%s\n' "$sprite" | wc -l)
 pad_top=$(( (fetcher_height - height) / 2 + EXTRA_PADDING_H ))
