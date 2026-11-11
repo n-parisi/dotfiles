@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Claude Code status line: prepend the current zmx session to the Amazon toolbox statusline.
+#
+# Claude Code pipes a JSON payload (session_id, cwd, model, workspace, ...) on stdin and
+# renders the first line of stdout. ANSI colors are honored.
+set -uo pipefail
+
+input=$(cat)
+
+# The env is inherited from the shell that launched claude, so ZMX_SESSION is the pane's session.
+session="${ZMX_SESSION:-}"
+session="${session#"${ZMX_SESSION_PREFIX:-}"}"
+
+base=$(printf '%s' "$input" | "$HOME/.toolbox/bin/claude" amzn-statusline 2>/dev/null)
+
+if [[ -n $session && -n $base ]]; then
+  printf '\033[35m%s\033[0m | %s\n' "$session" "$base"
+elif [[ -n $session ]]; then
+  printf '\033[35m%s\033[0m\n' "$session"
+else
+  printf '%s\n' "$base"
+fi
