@@ -17,12 +17,12 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply n-parisi/dotfiles
 | Prompt | Purpose | Example / default |
 |---|---|---|
 | `email` | Used for `~/.gitconfig` | `you@example.com` |
-| `region` | Cosmetic accent theme applied to tmux, starship, and fastfetch | `kanto` (default), `johto`, `hoenn` |
+| `region` | Cosmetic accent theme applied to starship and fastfetch | `kanto` (default), `johto`, `hoenn` |
 | `work machine?` | Gates whether the private work overlay is fetched | `n` on personal machines |
 
 On a personal machine (`work = n`), nothing further is required. On first
-apply, mise installs the pinned toolchain and chezmoi clones its two git-repo
-dependencies (prezto, tpm). This can take a few minutes the first time.
+apply, mise installs the pinned toolchain and chezmoi clones its git-repo
+dependency (prezto). This can take a few minutes the first time.
 
 ## Work machines (overlay)
 
@@ -49,7 +49,6 @@ ever reach this public repo.
 | Editor | Helix (`hx`) is `$EDITOR`/`$VISUAL` |
 | Git aliases | `gst`, `gd`, `gsw`, `grb`, `gl`, `ga`, `gc`, `gco`, `glol` |
 | Tool aliases | `l`/`ls` → `lsd`, `cat` → `bat` |
-| Tmux shortcut | `t` → `tmux new-session -A -s <region>` |
 | SSH wrapper | Sets the terminal title to the target host for the duration of the connection |
 | zmx tab title (work Linux) | Inside a zmx session the tab title is `$ZMX_SESSION`; Claude Code hooks call `~/.local/bin/claude-tab-state` to prefix it with `●` working / `⏳` waiting on you / `✅` done, ringing the bell on `⏳`/`✅` (Ghostty adds 🔔 to the tab until focused) |
 | Navigation | zoxide replaces `cd` (initialized last so nothing overrides its hook) |
@@ -62,20 +61,6 @@ ever reach this public repo.
 | starship | Minimal one-line prompt (`user on ◓<region> in <context>`); accent color keyed to `region` (kanto = blue, johto = gold, hoenn = green) |
 | fastfetch | System-info panel shown on every new shell via the `pokefetch` wrapper |
 | pokefetch | Runs fastfetch with a random Pokémon sprite (via `pokeget`) in place of the OS logo, sized to match the info panel. Falls back to plain fastfetch if `pokeget` hasn't been built yet (fresh machine, before bootstrap completes) |
-
-### tmux
-
-| Area | Detail |
-|---|---|
-| Prefix | `C-space` (not the tmux default `C-b`) |
-| Window navigation (no prefix) | `M-t` new window · `M-[`/`M-]` prev/next · `M-{`/`M-}` swap · `M-.` rename · `M-w` kill pane |
-| Splits | `\|` / `-` |
-| Pane navigation | Arrow keys, no prefix |
-| Resize | prefix + `M-arrow` |
-| Status bar | Region-accented to match starship |
-| Copy mode | `Enter` = "smart" copy (collapses soft-wrapped lines, keeps paragraph/list breaks — good for prose); `Y` = literal copy (preserves every newline — good for code); both go out over OSC 52 |
-| URL grab | `prefix u` greps the pane for URLs, fzf-picks one, and copies it |
-| Session persistence | tmux-resurrect / tmux-continuum autosave every 15 min and restore layout/cwd on server start; manual save/restore via `prefix Ctrl-s` / `Ctrl-r` |
 
 ### Git & code review
 
@@ -134,14 +119,14 @@ current.
 ### Theming
 
 The `region` answer from `chezmoi init` (`kanto` / `johto` / `hoenn`) threads
-one accent color and a matching Pokémon flavor through three tools at once:
-tmux's status bar, starship's prompt, and fastfetch's banner.
+one accent color and a matching Pokémon flavor through starship's prompt and
+fastfetch's banner.
 
 ## Everyday use
 
 | Command | Effect |
 |---|---|
-| `update` | Pull + apply dotfiles (refreshing prezto/tpm/overlay), then `mise upgrade` |
+| `update` | Pull + apply dotfiles (refreshing prezto/overlay), then `mise upgrade` |
 | `update -n` | Same as above, but preview-only — no changes made |
 | `chezmoi edit <file>` | Edit a chezmoi-managed file |
 | `chezmoi apply` | Apply pending changes to managed files |
@@ -150,5 +135,4 @@ tmux's status bar, starship's prompt, and fastfetch's banner.
 
 This README is a map of what's set up and why, not an exhaustive reference.
 For full keybindings and options, read the source templates directly —
-`dot_tmux.conf.tmpl`, `executable_dot_zshrc.tmpl`, and the files under
-`private_dot_config/`.
+`executable_dot_zshrc.tmpl` and the files under `private_dot_config/`.

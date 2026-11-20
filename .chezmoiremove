@@ -1,0 +1,11 @@
+# Targets chezmoi deletes on `chezmoi apply`. Deleting a source file doesn't
+# remove what an earlier apply already put in $HOME, so retired config is
+# listed here to clean it up on every machine.
+
+# tmux (replaced by zmx): config, helper scripts, tpm + plugins, resurrect saves
+.tmux.conf
+.tmux
+.local/bin/tmux-copy-smart
+.local/bin/tmux-url-pick
+.local/bin/claude-tmux-state
+.local/share/tmux

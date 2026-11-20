@@ -20,7 +20,6 @@ ssh() {
 
 ### UTIL ALIASES ###
 alias ..='cd ..'
-alias t='tmux new-session -A -s {{ .region }}'
 alias ls='lsd'
 
 ### GIT ALIASES ###
@@ -58,8 +57,8 @@ source ~/.local/share/mise/completions.zsh
 # One verb to update everything: pull+apply dotfiles, then upgrade mise itself
 # and every mise-managed tool to the newest release. `update -n` previews what
 # mise would bump without changing anything.
-#   -R/--refresh-externals=always FORCES a git pull of every external (prezto,
-#   tpm, and the work overlay) on each `update`. Without it chezmoi honors each
+#   -R/--refresh-externals=always FORCES a git pull of every external (prezto
+#   and the work overlay) on each `update`. Without it chezmoi honors each
 #   external's refreshPeriod (weekly), so a work-overlay edit pushed from another
 #   machine could take up to a week to arrive. `update` is the deliberate sync
 #   command, so we always refresh; plain `chezmoi apply` still stays fast.
