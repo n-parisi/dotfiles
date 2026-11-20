@@ -51,6 +51,7 @@ ever reach this public repo.
 | Tool aliases | `l`/`ls` → `lsd`, `cat` → `bat` |
 | Tmux shortcut | `t` → `tmux new-session -A -s <region>` |
 | SSH wrapper | Sets the terminal title to the target host for the duration of the connection |
+| zmx tab title (work Linux) | Inside a zmx session the tab title is `$ZMX_SESSION`; Claude Code hooks call `~/.local/bin/claude-tab-state` to prefix it with `●` working / `⏳` waiting on you / `✅` done, ringing the bell on `⏳`/`✅` (Ghostty adds 🔔 to the tab until focused) |
 | Navigation | zoxide replaces `cd` (initialized last so nothing overrides its hook) |
 | Other CLI tools wired in | fzf, bat, lsd, glow |
 
@@ -72,7 +73,6 @@ ever reach this public repo.
 | Pane navigation | Arrow keys, no prefix |
 | Resize | prefix + `M-arrow` |
 | Status bar | Region-accented to match starship |
-| Claude Code integration | Each window tab can show a glyph (`●` / `⏳` / `✅`) driven by Claude Code hooks via `~/.local/bin/claude-tmux-state`, indicating at a glance which window Claude is working in, waiting on input in, or has finished in |
 | Copy mode | `Enter` = "smart" copy (collapses soft-wrapped lines, keeps paragraph/list breaks — good for prose); `Y` = literal copy (preserves every newline — good for code); both go out over OSC 52 |
 | URL grab | `prefix u` greps the pane for URLs, fzf-picks one, and copies it |
 | Session persistence | tmux-resurrect / tmux-continuum autosave every 15 min and restore layout/cwd on server start; manual save/restore via `prefix Ctrl-s` / `Ctrl-r` |

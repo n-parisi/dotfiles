@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# claude-tab-state — reflect Claude Code's state in the terminal tab and ring the
+# bell when Claude needs you. Called from Claude Code hooks (see ~/.claude/settings.json).
+#
+# Usage: claude-tab-state <working|waiting|done|clear>
+#
+# Title: only inside zmx (ZMX_SESSION set), as "<glyph> $ZMX_SESSION". The zmx block
+#   in ~/.zshrc titles the tab with the session name, and settings.json sets
+#   CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1 so Claude doesn't overwrite it. Outside zmx
+#   the title is left alone.
+# Bell: on waiting/done. Ghostty's default bell-features (attention,title) then
+#   prepend 🔔 to the tab and request attention until the tab is focused.
+#
+# Always exits 0: a hook must never fail the turn.
+
+case "$1" in
+  working) glyph="●";  bell=0 ;;   # turn in progress
+  waiting) glyph="⏳"; bell=1 ;;   # permission prompt / question — needs you
+  done)    glyph="✅"; bell=1 ;;   # turn finished — your move
+  clear)   glyph="";   bell=0 ;;   # session ended — plain session name
+  *) exit 0 ;;                     # unknown arg — do nothing rather than error
+esac
+
+# Hooks can run without a controlling terminal, so /dev/tty may not open. Fall back
+# to walking up the process tree to the first ancestor (claude) whose stdout is a tty.
+find_tty() {
+  if { : >/dev/tty; } 2>/dev/null; then echo /dev/tty; return 0; fi
+  local pid=$PPID t
+  while [[ -n $pid && $pid -gt 1 ]]; do
+    t=$(readlink "/proc/$pid/fd/1" 2>/dev/null)
+    if [[ $t == /dev/pts/* ]]; then echo "$t"; return 0; fi
+    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+  done
+  return 1
+}
+
+seq=""
+if [[ -n ${ZMX_SESSION:-} ]]; then
+  # OSC 0 (same as set-title in ~/.zshrc), ST-terminated so it can't be read as a bell.
+  seq+=$'\e]0;'"${glyph:+$glyph }$ZMX_SESSION"$'\e\\'
+fi
+(( bell )) && seq+=$'\a'
+[[ -z $seq ]] && exit 0
+
+tty=$(find_tty) || exit 0
+printf '%s' "$seq" >"$tty" 2>/dev/null
+exit 0

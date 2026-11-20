@@ -68,10 +68,8 @@ set -g status-style "bg=#1a1b26,fg=#565f89"
 set -g status-left "#[bg={{ $accent }},fg=#1a1b26,bold] ◓ {{ .region }} #[fg={{ $accent }},bg=#1a1b26]#[default] "
 
 # Windows: dim/flat when inactive, accented powerline pill when current.
-# #{@claude_state} is a per-window glyph set by ~/.local/bin/claude-tmux-state
-# from Claude Code hooks (● working, ⏳ waiting on you, ✅ done).
-set -g window-status-format "#[fg=#565f89] ◓ #I:#W#{?@claude_state, #{@claude_state},} "
-set -g window-status-current-format "#[fg={{ $accent }},bg=#1a1b26]#[bg={{ $accent }},fg=#1a1b26,bold] ◓ #I:#W#{?@claude_state, #{@claude_state},} #[fg={{ $accent }},bg=#1a1b26]#[default]"
+set -g window-status-format "#[fg=#565f89] ◓ #I:#W "
+set -g window-status-current-format "#[fg={{ $accent }},bg=#1a1b26]#[bg={{ $accent }},fg=#1a1b26,bold] ◓ #I:#W #[fg={{ $accent }},bg=#1a1b26]#[default]"
 
 # Right: prefix indicator (only shown while prefix is armed) + clock
 set -g status-right "#{?client_prefix,#[fg=#f7768e,bg=#1a1b26]#[bg=#f7768e,fg=#1a1b26,bold] PREFIX #[default],}#[fg={{ $accent }},bg=#1a1b26]#[bg={{ $accent }},fg=#1a1b26,bold] #(TZ='America/New_York' date +%%H:%%M) #[default]"

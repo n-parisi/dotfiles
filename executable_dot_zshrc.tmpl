@@ -159,8 +159,21 @@ zmx-select() {
     return 130
   fi
 
+  # Title the tab before attaching: a reattach into a running program (e.g.
+  # claude) shows no new prompt, so the in-session precmd hook below won't fire.
+  set-title "${prefix}${session_name}"
   zmx attach "$session_name"
 }
+
+# Inside a session, keep the terminal tab title = session name, re-asserted at
+# every prompt so programs that set their own title don't leave it stale.
+# Claude Code's own title updates are off (CLAUDE_CODE_DISABLE_TERMINAL_TITLE in
+# ~/.claude/settings.json); its hooks call claude-tab-state to prepend a state glyph.
+if [[ -n "$ZMX_SESSION" ]]; then
+  _zmx_tab_title() { set-title "$ZMX_SESSION" }
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd _zmx_tab_title
+fi
 
 # optional: land in the picker on shell start when not already in a session
 if command -v zmx &> /dev/null && command -v fzf &> /dev/null && [[ -z "$ZMX_SESSION" ]]; then
