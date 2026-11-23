@@ -36,7 +36,7 @@ alias gc='git commit --verbose'
 alias gco='git checkout'
 
 # PATH
-export PATH="/local/home/nkparisi/.bun/bin:$PATH"
+export PATH="$HOME/.bun/bin:$PATH"
 
 # if you wish to use IMDS set AWS_EC2_METADATA_DISABLED=false
 export AWS_EC2_METADATA_DISABLED=true
@@ -48,8 +48,10 @@ export AWS_EC2_METADATA_DISABLED=true
 # (mise below, omp further down) — otherwise `compdef: command not found`.
 autoload -Uz compinit && compinit
 
-# Set up mise for runtime management
-eval "$(~/.local/bin/mise activate zsh)"
+# Set up mise for runtime management. Resolved from PATH, not a hardcoded
+# ~/.local/bin/mise: the bootstrap skips the curl installer when mise already
+# exists (e.g. Homebrew on macOS), so its location varies per machine.
+eval "$(mise activate zsh)"
 # mise doesn't ship a completions file on disk; generate it once and cache it.
 [[ -f ~/.local/share/mise/completions.zsh ]] || { mkdir -p ~/.local/share/mise; mise completion zsh > ~/.local/share/mise/completions.zsh; }
 source ~/.local/share/mise/completions.zsh
@@ -102,7 +104,8 @@ function git_main_branch() {
   return 1
 }
 
-eval "$(omp completions zsh)"
+# omp (oh-my-pi) is a bun-global install, not managed by these dotfiles.
+command -v omp &>/dev/null && eval "$(omp completions zsh)"
 
 {{ if and .work (eq .chezmoi.os "linux") -}}
 # zmx — session persistence. Installed only on the remote dev desktop (see
